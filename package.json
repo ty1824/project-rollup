@@ -1,6 +1,6 @@
 {
   "name": "project-rollup",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "JS Project build tool",
   "main": "dist/project-rollup.js",
   "jsnext:main": "index.js",
@@ -16,6 +16,8 @@
   "license": "MIT",
   "devDependencies": {
     "gulp": "^3.9.0",
-    "gulp-babel": "^5.2.1"
-  }
+    "gulp-babel": "^5.2.1",
+    "gulp-rename": "^1.2.2"
+  },
+  "repository" : "https://github.com/ty1824/project-rollup"
 }
