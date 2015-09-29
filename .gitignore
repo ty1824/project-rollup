@@ -1,0 +1,13 @@
+#ignore dist directory
+dist
+
+#ignore node_modules
+node_modules/
+
+#ignore logs
+*.log
+
+#ignore sublime files
+.sublime-gulp.cache
+*.sublime-project
+*.sublime-workspace

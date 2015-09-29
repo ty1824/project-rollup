@@ -1,0 +1,21 @@
+{
+  "name": "project-rollup",
+  "version": "1.0.0",
+  "description": "JS Project build tool",
+  "main": "dist/project-rollup.js",
+  "jsnext:main": "index.js",
+  "dependencies": {
+    "rollup": "^0.16.4",
+    "through2": "^2.0.0",
+    "vinyl": "^1.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tyler Hodgkins",
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.2.1"
+  }
+}
