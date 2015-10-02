@@ -1,7 +1,9 @@
 {
   "name": "project-rollup",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "JS Project build tool",
+  "author": "Tyler Hodgkins",
+  "license": "MIT",
   "main": "dist/project-rollup.js",
   "jsnext:main": "index.js",
   "dependencies": {
@@ -9,15 +11,33 @@
     "through2": "^2.0.0",
     "vinyl": "^1.0.0"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Tyler Hodgkins",
-  "license": "MIT",
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-babel": "^5.2.1",
+    "gulp-eslint": "^1.0.0",
+    "gulp-plumber": "^1.0.1",
     "gulp-rename": "^1.2.2"
   },
-  "repository" : "https://github.com/ty1824/project-rollup"
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "eslintConfig": {
+    "extends" : "eslint:recommended",
+    "env": {
+      "es6": true,
+      "node" : true
+    },
+    "rules": {
+      "key-spacing": [
+        1,
+        {
+          "beforeColon": true,
+          "afterColon": true
+        }
+      ],
+      "no-underscore-dangle": 0,
+      "no-console": 0
+    }
+  },
+  "repository": "https://github.com/ty1824/project-rollup"
 }

@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 let through = require("through2");
 let rollup = require("rollup");
@@ -7,14 +7,6 @@ let Path = require("path");
 let File = require("vinyl");
 
 /* ====== Utility functions ====== */
-function arrayFrom(iterable) {
-	let ret = [];
-	for (let element of iterable) {
-		ret.push(element);
-	}
-	return ret;
-}
-
 function mapIterable(iterable, func) {
 	let ret = [];
 	for (let element of iterable) {
@@ -32,21 +24,21 @@ function difference(a, b) {
   return difference;
 }
 
+function clone(a) {
+	let ret = {};
+	for (let prop in a) {
+		ret[prop] = a[prop];
+	}
+	return ret;
+}
+
 
 /* ====== Exported helper functions ====== */
 
 // Reads the file at the given filepath and then returns a JSON-parsed representation of the file.
 function defaultParser(filepath) {
-	return new Promise(function(resolve, reject) {
-		fs.readFile(filepath, 'utf8', function(err, data) {
-			if (err) {
-	        	return reject(err);
-	        }
-
-	        resolve(JSON.parse(data))
-		});
-	});
-	
+	let data = fs.readFileSync(filepath, "utf8");
+    return JSON.parse(data);
 }
 
 // Returns the "targets" properties of the passed object
@@ -62,9 +54,9 @@ function chromeExtensionIdentifier(manifest) {
 	// Get all targets from content scripts
 	if (manifest.content_scripts) {
 		for (let contentScript of manifest.content_scripts) {
-		  if (contentScript.js) {
-		    contentScript.js.map(addScript);  
-		  }
+			if (contentScript.js) {
+				contentScript.js.map(addScript);
+			}
 		}
 	}
 
@@ -93,20 +85,45 @@ function chromeExtensionIdentifier(manifest) {
 	return targets;
 }
 
+let _cacheMap = Symbol("cacheMap");
+class FileCache {
+	constructor() {
+		this[_cacheMap] = new Map();
+	}
+
+	add(filepath, file) {
+		this[_cacheMap].set(filepath, file);
+	}
+
+	has(filepath) {
+		return this[_cacheMap].has(filepath);
+	}
+
+	remove(filepath) {
+		this[_cacheMap].delete(filepath);
+	}
+
+	load(filepath) {
+		if (this[_cacheMap].has(filepath)) {
+			return this[_cacheMap].get(filepath);
+		}
+		let file = fs.readFileSync(filepath, { encoding : "utf-8" });
+		this[_cacheMap].set(filepath, file);
+		return file;
+	}
+}
+
 
 let _analyzeTargets = Symbol("analyzeTargets");
 let _bundleTarget = Symbol("bundleTarget");
 let _bundleTargets = Symbol("bundleTargets");
-let _checkInit = Symbol("isInit");
 let _dependencies = Symbol("dependencies");
-let _init = Symbol("init");
-let _generate = Symbol("init");
+let _generate = Symbol("generate");
 let _resolveTargets = Symbol("resolveTargets");
 let _targetFile = Symbol("targetFile");
 let _targetIdentifier = Symbol("targetIdentifier");
 let _targetParser = Symbol("targetParser");
 let _targets = Symbol("targets");
-
 /*
 options.targetFile
 	Specifies the path to the file containing the target definitions. If relative, uses cwd.
@@ -118,11 +135,14 @@ options.srcDir
 class Project {
 	constructor(options) {
 		this.srcDir = options.srcDir || ".";
-		this.options = options.rollup;
+		this.rollupOptions = options.rollup;
+		this.generateOptions = options.generate;
+		Object.defineProperty(this,
+			"cache", { value : new FileCache() });
 
 		if (options.targets) {
 			let targets = [];
-			for (target of options.targets) {
+			for (let target of options.targets) {
 				targets.push(Path.resolve(options.srcDir, target));
 			}
 			this[_targets] = targets;
@@ -132,7 +152,11 @@ class Project {
 			this[_targetIdentifier] = options.targetIdentifier || defaultIdentifier;
 		}
 
-		this[_init]();
+		this[_dependencies] = new Map();
+		if (this[_targetFile]) {
+			let object = this[_targetParser](this[_targetFile]);
+			this[_targets] = this[_resolveTargets](object);
+		}
 	}
 
 	[_resolveTargets](object) {
@@ -143,70 +167,59 @@ class Project {
 		return targets;
 	}
 
-	[_init]() {
-		this[_dependencies] = new Map();
-		let ret = Promise.resolve(this[_targets]);
-		if (this[_targetFile]) {
-			ret = this[_targetParser](this[_targetFile])
-			.then(function(object) {
-				return this[_targets] = this[_resolveTargets](object);
-			}.bind(this))
-			.catch(function(err) {
-				return err;
-			})
-		}
-		this[_checkInit] = ret;
-		return ret;
-	}
-
 	/*
-	Reads targets from the target source file if it exists, and returns a promise with the added/removed targets
+	Reads targets from the target source file if it exists, and returns the added/removed targets
 	*/
 	[_analyzeTargets]() {
-		return this[_checkInit]
-		.then(function() {
-			if (this[_targetFile]) {
-				return this[_targetParser](this[_targetFile])
-				.then(function(object) {
-					let targets = this[_resolveTargets](object);
-					let add = difference(targets, this[_targets]);
-					let remove = difference(this[_targets], targets);
-					this[_targets] = targets;
-					return {add, remove};
-				})
-			} else {
-				return Promise.resolve({add : {}, remove : {}});
-			}
-		}.bind(this));
+		if (this[_targetFile]) {
+			let object = this[_targetParser](this[_targetFile])
+			let targets = this[_resolveTargets](object);
+			let add = difference(targets, this[_targets]);
+			let remove = difference(this[_targets], targets);
+			this[_targets] = targets;
+			return {add, remove};
+		} else {
+			return {add : {}, remove : {}};
+		}
 	}
 
 	/*
-	Creates a rollup bundle for the target file parameter
+	Creates a rollup bundle for the target file parameter, returns a promise with the bundle
 	*/
 	[_bundleTarget](target) {
-		return this[_checkInit]
-		.then(function() {
-			return rollup.rollup({
-		      entry : target,
-		    }).then(function(bundle) {
-		    	this[_dependencies].set(target, bundle.modules);
-		    	return { bundle, target };
-		    }.bind(this))
-		}.bind(this));
+		let options = clone(this.generateOptions);
+		options.entry = target;
+		options.load = function ( id, opts ) {
+			const source = this.cache.load(id);
+
+			return opts.transform.reduce( function(source, transformer) {
+				return transformer( source, id );
+			}.bind(this), source );
+		}.bind(this);
+
+		console.log("==> Bundling: " + target);
+		return rollup.rollup(options)
+		.then(function(bundle) {
+			this[_dependencies].set(target, bundle.modules);
+			return { bundle, target };
+		}.bind(this))
 	}
 
+	/*
+	Creates rollup bundles for the targets passed to the function or all targets for this Project, returns a promise with all bundles.
+	*/
 	[_bundleTargets](targets) {
-		return this[_checkInit]
-		.then(function() {
-			let targetSet = targets || this[_targets];
-			return Promise.all(mapIterable(targetSet, this[_bundleTarget].bind(this)));
-		}.bind(this));
-		
+		let targetSet = targets || this[_targets];
+		return Promise.all(mapIterable(targetSet, this[_bundleTarget].bind(this)));
 	}
 
+	/*
+	Takes an iterable of bundles and returns an array of generated source+map target objects.
+	*/
 	[_generate](targetBundles) {
 		let gen = [];
 		for (let targetBundle of targetBundles) {
+			console.log("==> Generating: " + targetBundle.target);
 			let generated = targetBundle.bundle.generate();
 			gen.push({
 				code : generated.code,
@@ -217,32 +230,66 @@ class Project {
 		return gen;
 	}
 
-	isTargetSource(file) {
-    	return file === this[_targetSource];
+	/**
+	 * Determines if the given filepath refers to the target source
+	 * @param {string} filepath
+	 * @return {boolean} isTargetSource
+	 */
+	isTargetSource(filepath) {
+		return filepath === this[_targetFile];
 	}
 
-	isTarget(file) {
-		return this.targets.has(file);
+	/**
+	 * Determines if the given filepath refers to a target
+	 * @param {string} filepath
+	 * @return {boolean} isTarget
+	 */
+	isTarget(filepath) {
+		return this[_targets].indexOf(filepath) >= 0;
 	}
 
-	isDependency(file, target) {
-		// If specific target, return true if that target's bundle has 
+	/**
+	 * Determines if the given filepath is a dependency of the provided target, or a dependency of any target if no target passed.
+	 * @param {string} filepath
+	 * @param {string} target
+	 * @return {boolean} isDependency
+	 */
+	isDependency(filepath, target) {
+		// If specific target, return true if that target has this file as a dependency
 		if (target) {
-			if (this[_dependencies].get(target).indexOf(target) => 0) return true;
+			let targetDependencies = this[_dependencies].get(target);
+			if (filepath != target && targetDependencies) {
+				for (let dependency of targetDependencies) {
+					if (dependency.id === filepath) return true;
+				}
+			}
 		} else {
 			for (let target of this[_targets]) {
-				if (this[_dependencies].get(target).indexOf(target) => 0) return true;
+				let targetDependencies = this[_dependencies].get(target);
+				if (filepath != target && targetDependencies) {
+					for (let dependency of targetDependencies) {
+						if (dependency.id === filepath) return true;
+					}
+				}
 			}
 		}
 		return false;
 	}
 
-	getTargetsForFile(file) {
+	/**
+	 * Returns all targets that have the given file as a dependency.
+	 * @param {string} filepath
+	 * @return {Array} targetsForFile
+	 */
+	getTargetsForFile(filepath) {
 		let ret = [];
 		for (let target of this[_targets]) {
-			for (let dependency of this.dependencies.get(target)) {
-				if (dependency === target) ret.push(target);
-			} 
+			let targetDependencies = this[_dependencies].get(target);
+			if (targetDependencies) {
+				for (let dependency of targetDependencies) {
+					if (dependency.id === filepath) ret.push(target);
+				}
+			}
 		}
 
 		return ret;
@@ -253,35 +300,51 @@ class Project {
 	}
 
 	/*
-	Returns a generated rollup object {code, map}
-	*/
+	 * Builds all targets of this project and returns a promise containing an array of generated objects
+	 *
+	 * Generated objects are of the form:
+	 * {
+	 * 	{string} code - the generated code,
+	 * 	{string} map - the sourcemap,
+	 *	{string} target - the original filepath
+	 * }
+	 * @return {Promise<Array>} the array of generated objects
+	 */
 	build() {
-		return this[_checkInit]
-			.then(this[_bundleTargets].bind(this, undefined))
+		console.log("Building project");
+		return this[_bundleTargets]()
 			.then(this[_generate]);
 	}
 
-	change(file) {
-		return this[_checkInit]
-		.then(function() {
-			// If source, re-analyze targets and rebuild changed/added targets
-			if (this.isTargetSource(file)) {
-				return this[_analyzeTargets]()
-				.then(this[_bundleTargets].bind(this))
+	/*
+	 * Handles a change to the given filepath and returns a promise containing an array of generated objects.
+	 *
+	 * On manifest change, re-analyzes all targets and rebuilds new targets.
+	 * On target change, rebuilds target.
+	 * On dependency change, rebuilds all targets dependent on the file.
+	 *
+	 * Generated objects are of the form
+	 * {
+	 * 	{string} code - the generated code,
+	 * 	{string} map - the sourcemap,
+	 *	{string} target - the original filepath
+	 * }
+	 * @return {Promise<Array>} the array of generated objects
+	 */
+	change(filepath) {
+		console.log("Handling change to: " + filepath);
+		// If source, re-analyze targets and rebuild changed/added targets
+		if (this.isTargetSource(filepath)) {
+			let targetDelta = this[_analyzeTargets]();
+			return this[_bundleTargets](targetDelta.add)
 				.then(this[_generate].bind(this));
-			} else {
-				if (this.isTarget(file)) {
-					// If target, rebuild this target
-					return this[_bundleTarget](file)
-						.then(this[_generate].bind(this));
-				}
-				if (this.isDependency(file)) {
-					// If dependency, rebuild all targets dependent on this
-					return this[_bundleTargets](getTargetsForFile(file))
-						.then(this[_generate].bind(this));
-				}
-			}
-		});
+		} else {
+			let buildTargets = [];
+			buildTargets = this.getTargetsForFile(filepath);
+
+			return this[_bundleTargets](buildTargets)
+				.then(this[_generate].bind(this));
+		}
 	}
 }
 
@@ -289,14 +352,17 @@ let projects = new Map();
 
 let ProjectStream = {
 	/*
-		
 	*/
 	build : function(options) {
 		if (!projects.has(Path.resolve(options.targetFile))) {
 			projects.set(Path.resolve(options.targetFile), new Project(options));
 		}
 		let project = projects.get(Path.resolve(options.targetFile));
+
 		return through.obj(function(file, enc, callback) {
+			project.cache.add(file.path, file.contents.toString("utf-8"));
+			callback();
+		}, function(callback) {
 			project.build()
 			.then(function(generatedFiles) {
 				for (let generated of generatedFiles) {
@@ -305,8 +371,18 @@ let ProjectStream = {
 						base : project.getSourceRoot(),
 						path : generated.target,
 						contents : new Buffer(generated.code)
-					}))
+					}));
+
+					if (options.map) {
+						this.push(new File({
+							cwd : process.cwd,
+							base : project.getSourceRoot(),
+							path : generated.target + ".map",
+							contents : new Buffer(generated.map)
+						}));
+					}
 				}
+				console.log("Project build completed");
 				callback();
 			}.bind(this))
 			.catch(function(err) {
@@ -322,6 +398,10 @@ let ProjectStream = {
 		let project = projects.get(Path.resolve(options.targetFile));
 
 		return through.obj(function(file, enc, callback) {
+			if (file.event) {
+				if (file.event === "unlink") project.cache.remove(file.path);
+				else project.cache.add(file.path, file.contents.toString("utf-8"));
+			}
 			project.change(file.path)
 			.then(function(generatedFiles) {
 				for (let generated of generatedFiles) {
@@ -329,10 +409,23 @@ let ProjectStream = {
 						cwd : process.cwd,
 						base : project.getSourceRoot(),
 						path : generated.target,
-						contents : generated.code
+						contents : new Buffer(generated.code)
 					}))
+
+					if (options.map) {
+						this.push(new File({
+							cwd : process.cwd,
+							base : project.getSourceRoot(),
+							path : generated.target + ".map",
+							contents : new Buffer(generated.map)
+						}));
+					}
 				}
+				callback();
 			}.bind(this))
+			.catch(function(err) {
+				callback(err);
+			})
 		});
 	}
 }
