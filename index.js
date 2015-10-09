@@ -421,6 +421,7 @@ let ProjectStream = {
 						}));
 					}
 				}
+				console.log("Delta build completed");
 				callback();
 			}.bind(this))
 			.catch(function(err) {
