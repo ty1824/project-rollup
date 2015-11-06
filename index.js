@@ -78,7 +78,7 @@ function chromeExtensionIdentifier(manifest) {
 	// Get all targets from web accessible resources
 	if (manifest.web_accessible_resources) {
 		for (let resource of manifest.web_accessible_resources) {
-			if (resource.indexOf(".js")) { addScript(resource); }
+			if (resource.indexOf(".js") >= 0) { addScript(resource); }
 		}
 	}
 
