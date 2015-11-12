@@ -189,12 +189,8 @@ class Project {
 	[_bundleTarget](target) {
 		let options = clone(this.generateOptions);
 		options.entry = target;
-		options.load = function ( id, opts ) {
-			const source = this.cache.load(id);
-
-			return opts.transform.reduce( function(source, transformer) {
-				return transformer( source, id );
-			}.bind(this), source );
+		options.load = function ( id ) {
+			return this.cache.load(id);
 		}.bind(this);
 
 		console.log("==> Bundling: " + target);

@@ -1,13 +1,13 @@
 {
   "name": "project-rollup",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "JS Project build tool",
   "author": "Tyler Hodgkins",
   "license": "MIT",
   "main": "dist/project-rollup.js",
   "jsnext:main": "index.js",
   "dependencies": {
-    "rollup": "^0.16.4",
+    "rollup": "^0.20.0",
     "through2": "^2.0.0",
     "vinyl": "^1.0.0"
   },

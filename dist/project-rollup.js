@@ -354,12 +354,8 @@
 			value: function value(target) {
 				var options = clone(this.generateOptions);
 				options.entry = target;
-				options.load = (function (id, opts) {
-					var source = this.cache.load(id);
-
-					return opts.transform.reduce((function (source, transformer) {
-						return transformer(source, id);
-					}).bind(this), source);
+				options.load = (function (id) {
+					return this.cache.load(id);
 				}).bind(this);
 
 				console.log("==> Bundling: " + target);
