@@ -222,6 +222,13 @@
 				this[_cacheMap].set(filepath, file);
 				return file;
 			}
+		}, {
+			key: "rollup",
+			value: function rollup() {
+				return {
+					load: this.load.bind(this)
+				};
+			}
 		}]);
 
 		return FileCache;
@@ -354,9 +361,7 @@
 			value: function value(target) {
 				var options = clone(this.generateOptions);
 				options.entry = target;
-				options.load = (function (id) {
-					return this.cache.load(id);
-				}).bind(this);
+				options.plugins = [this.cache.rollup];
 
 				console.log("==> Bundling: " + target);
 				return rollup.rollup(options).then((function (bundle) {
