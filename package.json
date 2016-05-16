@@ -7,7 +7,7 @@
   "main": "dist/project-rollup.js",
   "jsnext:main": "index.js",
   "dependencies": {
-    "rollup": "^0.19.0",
+    "rollup": "^0.26.0",
     "through2": "^2.0.0",
     "vinyl": "^1.0.0"
   },
