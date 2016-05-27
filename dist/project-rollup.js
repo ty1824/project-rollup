@@ -620,7 +620,7 @@
 			key: "build",
 			value: function build() {
 				console.log("Building project");
-				return this[_bundleTargets]().then(this[_generate]);
+				return this[_bundleTargets]().then(this[_generate].bind(this));
 			}
 
 			/*

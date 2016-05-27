@@ -313,7 +313,7 @@ class Project {
 	build() {
 		console.log("Building project");
 		return this[_bundleTargets]()
-			.then(this[_generate]);
+			.then(this[_generate].bind(this));
 	}
 
 	/*
