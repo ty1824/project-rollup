@@ -360,7 +360,7 @@
 		}, {
 			key: _bundleTarget,
 			value: function value(target) {
-				var options = clone(this.options.rollup);
+				var options = clone(this.rollup);
 				options.entry = target;
 
 				console.log("==> Bundling: " + target);

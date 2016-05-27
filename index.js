@@ -193,7 +193,7 @@ class Project {
 	Creates a rollup bundle for the target file parameter, returns a promise with the bundle
 	*/
 	[_bundleTarget](target) {
-		let options = clone(this.options.rollup);
+		let options = clone(this.rollup);
 		options.entry = target;
 
 		console.log("==> Bundling: " + target);
