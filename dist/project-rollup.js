@@ -259,7 +259,8 @@
 
 			this.srcDir = options.srcDir || ".";
 			this.options = options.options;
-			options.plugins = options.plugins || [this.cache.rollup];
+			options.plugins = options.plugins || [];
+			options.plugins.push(this.cache.rollup);
 			Object.defineProperty(this, "cache", { value: new FileCache() });
 
 			if (options.targets) {
