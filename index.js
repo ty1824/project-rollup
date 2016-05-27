@@ -142,7 +142,6 @@ class Project {
 		this.srcDir = options.srcDir || ".";
 		this.options = options.options;
 		options.plugins = options.plugins || [];
-		options.plugins.push(this.cache.rollup);
 		Object.defineProperty(this,
 			"cache", { value : new FileCache() });
 
@@ -163,6 +162,7 @@ class Project {
 			let object = this[_targetParser](this[_targetFile]);
 			this[_targets] = this[_resolveTargets](object);
 		}
+		options.plugins.push(this.cache.rollup);
 	}
 
 	[_resolveTargets](object) {
