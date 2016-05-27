@@ -140,7 +140,7 @@ options.srcDir
 class Project {
 	constructor(options) {
 		this.srcDir = options.srcDir || ".";
-		this.rollup = options.rollup;
+		this.rollup = options.rollup || {};
 		this.rollup.plugins = this.rollup.plugins || [];
 		Object.defineProperty(this,
 			"cache", { value : new FileCache() });
@@ -162,7 +162,7 @@ class Project {
 			let object = this[_targetParser](this[_targetFile]);
 			this[_targets] = this[_resolveTargets](object);
 		}
-		`this.options`.rollup.plugins.push(this.cache.rollup);
+		this.rollup.plugins.push(this.cache.rollup);
 	}
 
 	[_resolveTargets](object) {

@@ -258,7 +258,7 @@
 			_classCallCheck(this, Project);
 
 			this.srcDir = options.srcDir || ".";
-			this.rollup = options.rollup;
+			this.rollup = options.rollup || {};
 			this.rollup.plugins = this.rollup.plugins || [];
 			Object.defineProperty(this, "cache", { value: new FileCache() });
 
@@ -301,7 +301,7 @@
 				var object = this[_targetParser](this[_targetFile]);
 				this[_targets] = this[_resolveTargets](object);
 			}
-			"this.options".rollup.plugins.push(this.cache.rollup);
+			this.rollup.plugins.push(this.cache.rollup);
 		}
 
 		_createClass(Project, [{
