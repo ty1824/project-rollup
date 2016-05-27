@@ -260,6 +260,7 @@
 			this.srcDir = options.srcDir || ".";
 			this.rollup = options.rollup || {};
 			this.rollup.plugins = this.rollup.plugins || [];
+			this.generate = options.generate || {};
 			Object.defineProperty(this, "cache", { value: new FileCache() });
 
 			if (options.targets) {
@@ -396,7 +397,7 @@
 						var targetBundle = _step7.value;
 
 						console.log("==> Generating: " + targetBundle.target);
-						var generated = targetBundle.bundle.generate();
+						var generated = targetBundle.bundle.generate(this.generate);
 						gen.push({
 							code: generated.code,
 							map: generated.map,

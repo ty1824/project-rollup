@@ -142,6 +142,7 @@ class Project {
 		this.srcDir = options.srcDir || ".";
 		this.rollup = options.rollup || {};
 		this.rollup.plugins = this.rollup.plugins || [];
+		this.generate = options.generate || {};
 		Object.defineProperty(this,
 			"cache", { value : new FileCache() });
 
@@ -219,7 +220,7 @@ class Project {
 		let gen = [];
 		for (let targetBundle of targetBundles) {
 			console.log("==> Generating: " + targetBundle.target);
-			let generated = targetBundle.bundle.generate();
+			let generated = targetBundle.bundle.generate(this.generate);
 			gen.push({
 				code : generated.code,
 				map : generated.map,
