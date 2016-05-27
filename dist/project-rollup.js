@@ -258,8 +258,8 @@
 			_classCallCheck(this, Project);
 
 			this.srcDir = options.srcDir || ".";
-			this.options = options.options;
-			options.plugins = options.plugins || [];
+			this.rollup = options.rollup;
+			this.rollup.plugins = this.rollup.plugins || [];
 			Object.defineProperty(this, "cache", { value: new FileCache() });
 
 			if (options.targets) {
@@ -301,7 +301,7 @@
 				var object = this[_targetParser](this[_targetFile]);
 				this[_targets] = this[_resolveTargets](object);
 			}
-			options.plugins.push(this.cache.rollup);
+			"this.options".rollup.plugins.push(this.cache.rollup);
 		}
 
 		_createClass(Project, [{
@@ -360,7 +360,7 @@
 		}, {
 			key: _bundleTarget,
 			value: function value(target) {
-				var options = clone(this.generateOptions);
+				var options = clone(this.options.rollup);
 				options.entry = target;
 
 				console.log("==> Bundling: " + target);

@@ -140,8 +140,8 @@ options.srcDir
 class Project {
 	constructor(options) {
 		this.srcDir = options.srcDir || ".";
-		this.options = options.options;
-		options.plugins = options.plugins || [];
+		this.rollup = options.rollup;
+		this.rollup.plugins = this.rollup.plugins || [];
 		Object.defineProperty(this,
 			"cache", { value : new FileCache() });
 
@@ -162,7 +162,7 @@ class Project {
 			let object = this[_targetParser](this[_targetFile]);
 			this[_targets] = this[_resolveTargets](object);
 		}
-		options.plugins.push(this.cache.rollup);
+		`this.options`.rollup.plugins.push(this.cache.rollup);
 	}
 
 	[_resolveTargets](object) {
@@ -193,7 +193,7 @@ class Project {
 	Creates a rollup bundle for the target file parameter, returns a promise with the bundle
 	*/
 	[_bundleTarget](target) {
-		let options = clone(this.generateOptions);
+		let options = clone(this.options.rollup);
 		options.entry = target;
 
 		console.log("==> Bundling: " + target);
