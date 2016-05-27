@@ -258,8 +258,8 @@
 			_classCallCheck(this, Project);
 
 			this.srcDir = options.srcDir || ".";
-			this.rollupOptions = options.rollup;
-			this.generateOptions = options.generate;
+			this.options = options.options;
+			options.plugins = options.plugins || [this.cache.rollup];
 			Object.defineProperty(this, "cache", { value: new FileCache() });
 
 			if (options.targets) {
@@ -361,7 +361,6 @@
 			value: function value(target) {
 				var options = clone(this.generateOptions);
 				options.entry = target;
-				options.plugins = [this.cache.rollup];
 
 				console.log("==> Bundling: " + target);
 				return rollup.rollup(options).then((function (bundle) {
